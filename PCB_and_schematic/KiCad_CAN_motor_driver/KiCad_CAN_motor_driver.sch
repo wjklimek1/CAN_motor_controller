@@ -782,17 +782,6 @@ Text Label 6650 6950 0    50   ~ 0
 CAN_L
 Text Label 6650 6850 0    50   ~ 0
 CAN_H
-$Comp
-L Connector:Screw_Terminal_01x03 J6
-U 1 1 6063F28F
-P 6450 7400
-F 0 "J6" H 6450 7200 50  0000 C CNN
-F 1 "PWM IN" H 6650 7400 50  0000 C CNN
-F 2 "WK_lib:PowerPad_3x_3mm" H 6450 7400 50  0001 C CNN
-F 3 "~" H 6450 7400 50  0001 C CNN
-	1    6450 7400
-	-1   0    0    1   
-$EndComp
 Text Label 6650 7300 0    50   ~ 0
 PWM_IN
 Text Label 6650 7400 0    50   ~ 0
@@ -809,7 +798,7 @@ F 3 "" H 6850 7500 50  0001 C CNN
 	0    -1   -1   0   
 $EndComp
 Wire Wire Line
-	6650 7500 6850 7500
+	6600 7500 6850 7500
 Wire Notes Line
 	7400 7750 5750 7750
 Wire Notes Line
@@ -822,115 +811,6 @@ Wire Notes Line
 	7400 3950 7400 7750
 Wire Notes Line
 	5750 3950 5750 7750
-$Comp
-L Interface_CAN_LIN:SN65HVD232 U1
-U 1 1 60673CE3
-P 3900 4800
-F 0 "U1" H 4250 5200 50  0000 C CNN
-F 1 "SN65HVD232" H 4250 5100 50  0000 C CNN
-F 2 "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm" H 3900 4300 50  0001 C CNN
-F 3 "http://www.ti.com/lit/ds/symlink/sn65hvd230.pdf" H 3800 5200 50  0001 C CNN
-	1    3900 4800
-	-1   0    0    -1  
-$EndComp
-$Comp
-L power:+3.3V #PWR06
-U 1 1 60676560
-P 3900 4400
-F 0 "#PWR06" H 3900 4250 50  0001 C CNN
-F 1 "+3.3V" H 3915 4573 50  0000 C CNN
-F 2 "" H 3900 4400 50  0001 C CNN
-F 3 "" H 3900 4400 50  0001 C CNN
-	1    3900 4400
-	1    0    0    -1  
-$EndComp
-$Comp
-L power:GND #PWR07
-U 1 1 606775A4
-P 3900 5300
-F 0 "#PWR07" H 3900 5050 50  0001 C CNN
-F 1 "GND" H 3905 5127 50  0000 C CNN
-F 2 "" H 3900 5300 50  0001 C CNN
-F 3 "" H 3900 5300 50  0001 C CNN
-	1    3900 5300
-	1    0    0    -1  
-$EndComp
-Text Label 4300 4700 0    50   ~ 0
-CAN_TX
-Text Label 4300 4800 0    50   ~ 0
-CAN_RX
-Wire Wire Line
-	3900 4400 3900 4450
-Wire Wire Line
-	3900 5200 3900 5300
-Text Label 2800 4700 2    50   ~ 0
-CAN_H
-Text Label 2800 5000 2    50   ~ 0
-CAN_L
-$Comp
-L Device:R_Small R1
-U 1 1 60686C82
-P 3150 4850
-F 0 "R1" H 3209 4896 50  0000 L CNN
-F 1 "120R" H 3209 4805 50  0000 L CNN
-F 2 "Resistor_SMD:R_1206_3216Metric_Pad1.30x1.75mm_HandSolder" H 3150 4850 50  0001 C CNN
-F 3 "~" H 3150 4850 50  0001 C CNN
-	1    3150 4850
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	3500 4800 3450 4800
-Wire Wire Line
-	3450 4800 3450 4700
-Wire Wire Line
-	3450 4700 3150 4700
-Wire Wire Line
-	3500 4900 3450 4900
-Wire Wire Line
-	3450 4900 3450 5000
-Wire Wire Line
-	3450 5000 3150 5000
-Wire Wire Line
-	3150 4950 3150 5000
-Connection ~ 3150 5000
-Wire Wire Line
-	3150 5000 2800 5000
-Wire Wire Line
-	3150 4750 3150 4700
-Connection ~ 3150 4700
-Wire Wire Line
-	3150 4700 2800 4700
-$Comp
-L Device:C_Small C4
-U 1 1 606A1169
-P 4850 4850
-F 0 "C4" H 4942 4896 50  0000 L CNN
-F 1 "100nF" H 4942 4805 50  0000 L CNN
-F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 4850 4850 50  0001 C CNN
-F 3 "~" H 4850 4850 50  0001 C CNN
-	1    4850 4850
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	3900 4450 4850 4450
-Wire Wire Line
-	4850 4450 4850 4750
-Connection ~ 3900 4450
-Wire Wire Line
-	3900 4450 3900 4500
-Wire Wire Line
-	4850 4950 4850 5300
-$Comp
-L power:GND #PWR012
-U 1 1 606AA75D
-P 4850 5300
-F 0 "#PWR012" H 4850 5050 50  0001 C CNN
-F 1 "GND" H 4855 5127 50  0000 C CNN
-F 2 "" H 4850 5300 50  0001 C CNN
-F 3 "" H 4850 5300 50  0001 C CNN
-	1    4850 5300
-	1    0    0    -1  
-$EndComp
 Wire Notes Line
 	5300 4150 2450 4150
 Wire Notes Line
@@ -1915,4 +1795,141 @@ Wire Wire Line
 	8450 8050 9200 8050
 Wire Wire Line
 	6200 8800 6700 8800
+$Comp
+L Connector:Conn_01x03_Male J6
+U 1 1 605AD111
+P 6400 7400
+F 0 "J6" H 6450 7600 50  0000 C CNN
+F 1 "PWM_IN" H 6250 7400 50  0000 C CNN
+F 2 "Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical" H 6400 7400 50  0001 C CNN
+F 3 "~" H 6400 7400 50  0001 C CNN
+	1    6400 7400
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	6650 7300 6600 7300
+Wire Wire Line
+	6650 7400 6600 7400
+$Comp
+L power:GND #PWR012
+U 1 1 606AA75D
+P 4850 5300
+F 0 "#PWR012" H 4850 5050 50  0001 C CNN
+F 1 "GND" H 4855 5127 50  0000 C CNN
+F 2 "" H 4850 5300 50  0001 C CNN
+F 3 "" H 4850 5300 50  0001 C CNN
+	1    4850 5300
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	4850 4950 4850 5300
+Wire Wire Line
+	3900 4450 3900 4500
+Connection ~ 3900 4450
+Wire Wire Line
+	4850 4450 4850 4750
+Wire Wire Line
+	3900 4450 4850 4450
+$Comp
+L Device:C_Small C4
+U 1 1 606A1169
+P 4850 4850
+F 0 "C4" H 4942 4896 50  0000 L CNN
+F 1 "100nF" H 4942 4805 50  0000 L CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 4850 4850 50  0001 C CNN
+F 3 "~" H 4850 4850 50  0001 C CNN
+	1    4850 4850
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3100 4400 2750 4400
+Connection ~ 3100 4400
+Wire Wire Line
+	3100 4450 3100 4400
+Wire Wire Line
+	3100 5350 2750 5350
+Connection ~ 3100 5350
+Wire Wire Line
+	3100 5300 3100 5350
+Wire Wire Line
+	3500 4900 3450 4900
+Wire Wire Line
+	3500 4800 3450 4800
+$Comp
+L Device:R_Small R1
+U 1 1 60686C82
+P 3100 4550
+F 0 "R1" H 3159 4596 50  0000 L CNN
+F 1 "120R" H 3159 4505 50  0000 L CNN
+F 2 "Resistor_SMD:R_1206_3216Metric_Pad1.30x1.75mm_HandSolder" H 3100 4550 50  0001 C CNN
+F 3 "~" H 3100 4550 50  0001 C CNN
+	1    3100 4550
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3900 5200 3900 5300
+Wire Wire Line
+	3900 4400 3900 4450
+Text Label 4300 4800 0    50   ~ 0
+CAN_RX
+Text Label 4300 4700 0    50   ~ 0
+CAN_TX
+$Comp
+L power:GND #PWR07
+U 1 1 606775A4
+P 3900 5300
+F 0 "#PWR07" H 3900 5050 50  0001 C CNN
+F 1 "GND" H 3905 5127 50  0000 C CNN
+F 2 "" H 3900 5300 50  0001 C CNN
+F 3 "" H 3900 5300 50  0001 C CNN
+	1    3900 5300
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:+3.3V #PWR06
+U 1 1 60676560
+P 3900 4400
+F 0 "#PWR06" H 3900 4250 50  0001 C CNN
+F 1 "+3.3V" H 3915 4573 50  0000 C CNN
+F 2 "" H 3900 4400 50  0001 C CNN
+F 3 "" H 3900 4400 50  0001 C CNN
+	1    3900 4400
+	1    0    0    -1  
+$EndComp
+$Comp
+L Interface_CAN_LIN:SN65HVD232 U1
+U 1 1 60673CE3
+P 3900 4800
+F 0 "U1" H 3450 4400 50  0000 C CNN
+F 1 "SN65HVD232" H 3450 4300 50  0000 C CNN
+F 2 "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm" H 3900 4300 50  0001 C CNN
+F 3 "http://www.ti.com/lit/ds/symlink/sn65hvd230.pdf" H 3800 5200 50  0001 C CNN
+	1    3900 4800
+	-1   0    0    -1  
+$EndComp
+Text Label 2750 5350 2    50   ~ 0
+CAN_L
+Text Label 2750 4400 2    50   ~ 0
+CAN_H
+$Comp
+L Device:Jumper JP3
+U 1 1 6072D659
+P 3100 5000
+F 0 "JP3" V 3050 4950 50  0000 R CNN
+F 1 "Jumper" V 3150 4950 50  0000 R CNN
+F 2 "Jumper:SolderJumper-2_P1.3mm_Open_Pad1.0x1.5mm" H 3100 5000 50  0001 C CNN
+F 3 "~" H 3100 5000 50  0001 C CNN
+	1    3100 5000
+	0    -1   1    0   
+$EndComp
+Wire Wire Line
+	3100 4400 3450 4400
+Wire Wire Line
+	3450 4400 3450 4800
+Wire Wire Line
+	3100 5350 3450 5350
+Wire Wire Line
+	3450 4900 3450 5350
+Wire Wire Line
+	3100 4700 3100 4650
 $EndSCHEMATC
