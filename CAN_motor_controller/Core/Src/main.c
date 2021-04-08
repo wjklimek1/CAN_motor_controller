@@ -6,6 +6,7 @@
 #include "adc.h"
 #include "uart.h"
 #include "printf.h"
+#include "canbus.h"
 
 uint16_t ADC_raw_values[6];
 
@@ -32,6 +33,8 @@ int main()
 
   UART3_init(32000000, 115200);
 
+  CAN1_init(250000);
+
   int x = 0;
   while(1)
     {
@@ -42,5 +45,20 @@ int main()
       delay_ms(100);
       UART3_print_string("hello world\n");
       printf("HELLO WORD\n");
+
+      struct CANbus_tx_msg_t msg;
+      msg.stdID = 0x444;
+      msg.DLC = 8;
+      msg.RTR = 0;
+      msg.data[0] = 0;
+      msg.data[1] = 1;
+      msg.data[2] = 2;
+      msg.data[3] = 3;
+      msg.data[4] = 4;
+      msg.data[5] = 5;
+      msg.data[6] = 6;
+      msg.data[7] = 7;
+
+      CAN1_transmit_frame(msg);
     }
 }
