@@ -35,30 +35,30 @@ int main()
 
   CAN1_init(250000);
 
-  int x = 0;
+  GPIOC->ODR |= GPIO_ODR_ODR13;
+
+  struct CANbus_msg_t msg;
+  msg.stdID = 0x444;
+  msg.DLC = 8;
+  msg.RTR = 0;
+  msg.data[0] = 0;
+  msg.data[1] = 1;
+  msg.data[2] = 2;
+  msg.data[3] = 3;
+  msg.data[4] = 4;
+  msg.data[5] = 5;
+  msg.data[6] = 6;
+  msg.data[7] = 7;
+
   while(1)
-    {
-      x++;
-      GPIOC->ODR |= GPIO_ODR_ODR13;
-      delay_ms(100);
-      GPIOC->ODR &= ~GPIO_ODR_ODR13;
-      delay_ms(100);
-      UART3_print_string("hello world\n");
-      printf("HELLO WORD\n");
+  {
+    delay_ms(1000);
+    CAN1_transmit_message(msg);
 
-      struct CANbus_tx_msg_t msg;
-      msg.stdID = 0x444;
-      msg.DLC = 8;
-      msg.RTR = 0;
-      msg.data[0] = 0;
-      msg.data[1] = 1;
-      msg.data[2] = 2;
-      msg.data[3] = 3;
-      msg.data[4] = 4;
-      msg.data[5] = 5;
-      msg.data[6] = 6;
-      msg.data[7] = 7;
+    //int c = CAN1_get_message(&msg);
+    int a = CAN1_messages_pending();
+    int b = CAN1_messages_pending_FIFO0();
 
-      CAN1_transmit_frame(msg);
-    }
+    delay_ms(1);
+  }
 }

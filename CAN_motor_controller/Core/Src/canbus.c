@@ -51,6 +51,12 @@ uint8_t CAN1_init(uint32_t baudrate)
   /*
    * TODO: init CAN filters here
    */
+  //disable all filters - for testing only
+  CAN1->FA1R |= (0b1111111111111);
+  CAN1->FMR &= ~(CAN_FMR_FINIT);
+  /*
+   * init CAN filters end
+   */
 
   CAN1->MCR &= ~CAN_MCR_INRQ;  //exit initialization mode
   while((CAN1->MSR & CAN_MSR_INAK));  //wait for the hardware to confirm entering normal mode
@@ -58,7 +64,7 @@ uint8_t CAN1_init(uint32_t baudrate)
   return 1;
 }
 
-uint8_t CAN1_transmit_frame(struct CANbus_tx_msg_t msg)
+uint8_t CAN1_transmit_message(struct CANbus_msg_t msg)
 {
   if (CAN1->TSR & CAN_TSR_TME0) //check if mailbox0 is empty
   {
@@ -86,6 +92,70 @@ uint8_t CAN1_transmit_frame(struct CANbus_tx_msg_t msg)
     return 1;
 
   }
-  else
-    return 0;
+  else return 0;
 }
+
+uint8_t CAN1_get_message(struct CANbus_msg_t *msg)
+{
+  //check for messages in mailbox FIFO0
+  if (CAN1->RF0R & CAN_RF0R_FMP0_Msk)
+  {
+    msg->stdID = ((CAN1->sFIFOMailBox[0].RIR & CAN_RI0R_STID_Msk) >> CAN_RI0R_STID_Pos);   //get message ID
+    msg->RTR = ((CAN1->sFIFOMailBox[0].RIR & CAN_RI0R_RTR_Msk) >> CAN_RI0R_RTR_Pos);       //check if message is RTR type
+    msg->DLC = ((CAN1->sFIFOMailBox[0].RDTR & CAN_RDT0R_DLC_Msk) >> CAN_RDT0R_DLC_Pos);    //get amount of bytes in message
+
+    //get received data from registers
+    msg->data[0] = (CAN1->sFIFOMailBox[0].RDLR & 0xFF);
+    msg->data[1] = (CAN1->sFIFOMailBox[0].RDLR & 0xFF00) >> 8;
+    msg->data[2] = (CAN1->sFIFOMailBox[0].RDLR & 0xFF0000) >> 16;
+    msg->data[3] = (CAN1->sFIFOMailBox[0].RDLR & 0xFF000000) >> 24;
+    msg->data[4] = (CAN1->sFIFOMailBox[0].RDHR & 0xFF);
+    msg->data[5] = (CAN1->sFIFOMailBox[0].RDHR & 0xFF00) >> 8;
+    msg->data[6] = (CAN1->sFIFOMailBox[0].RDHR & 0xFF0000) >> 16;
+    msg->data[7] = (CAN1->sFIFOMailBox[0].RDHR & 0xFF000000) >> 24;
+
+    CAN1->RF0R |= CAN_RF0R_RFOM0;  //release mailbox 0
+
+    return 1;
+  }
+  //check for messages in mailbox FIFO1
+  else if (CAN1->RF1R & CAN_RF1R_FMP1_Msk)
+  {
+    msg->stdID = ((CAN1->sFIFOMailBox[1].RIR & CAN_RI1R_STID_Msk) >> CAN_RI1R_STID_Pos);   //get message ID
+    msg->RTR = ((CAN1->sFIFOMailBox[1].RIR & CAN_RI1R_RTR_Msk) >> CAN_RI1R_RTR_Pos);       //check if message is RTR type
+    msg->DLC = ((CAN1->sFIFOMailBox[1].RDTR & CAN_RDT1R_DLC_Msk) >> CAN_RDT1R_DLC_Pos);    //get amount of bytes in message
+
+    //get received data from registers
+    msg->data[0] = (CAN1->sFIFOMailBox[1].RDLR & 0xFF);
+    msg->data[1] = (CAN1->sFIFOMailBox[1].RDLR & 0xFF00) >> 8;
+    msg->data[2] = (CAN1->sFIFOMailBox[1].RDLR & 0xFF0000) >> 16;
+    msg->data[3] = (CAN1->sFIFOMailBox[1].RDLR & 0xFF000000) >> 24;
+    msg->data[4] = (CAN1->sFIFOMailBox[1].RDHR & 0xFF);
+    msg->data[5] = (CAN1->sFIFOMailBox[1].RDHR & 0xFF00) >> 8;
+    msg->data[6] = (CAN1->sFIFOMailBox[1].RDHR & 0xFF0000) >> 16;
+    msg->data[7] = (CAN1->sFIFOMailBox[1].RDHR & 0xFF000000) >> 24;
+
+    CAN1->RF0R |= CAN_RF1R_RFOM1;  //release mailbox 1
+
+    return 2;
+  }
+  else return 0;
+}
+
+uint8_t CAN1_messages_pending_FIFO0()
+{
+  return (CAN1->RF0R & CAN_RF0R_FMP0_Msk) >> CAN_RF0R_FMP0_Pos;
+}
+
+uint8_t CAN1_messages_pending_FIFO1()
+{
+  return (CAN1->RF1R & CAN_RF1R_FMP1_Msk) >> CAN_RF1R_FMP1_Pos;
+}
+
+uint8_t CAN1_messages_pending()
+{
+  uint8_t FIFO0_pending = (CAN1->RF0R & CAN_RF0R_FMP0_Msk) >> CAN_RF0R_FMP0_Pos;
+  uint8_t FIFO1_pending = (CAN1->RF1R & CAN_RF1R_FMP1_Msk) >> CAN_RF1R_FMP1_Pos;
+  return FIFO0_pending + FIFO1_pending;
+}
+
