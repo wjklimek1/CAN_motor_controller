@@ -2,6 +2,9 @@
 #include "stm32f103xb.h"
 
 #include "canbus.h"
+#include "ringbuffer.h"
+
+extern volatile CANbus_RX_buffer_t rx_buffer;
 
 uint8_t CAN1_init(uint32_t baudrate)
 {
@@ -71,7 +74,7 @@ uint8_t CAN1_init(uint32_t baudrate)
   return 1;
 }
 
-uint8_t CAN1_transmit_message(struct CANbus_msg_t msg)
+uint8_t CAN1_transmit_message(CANbus_msg_t msg)
 {
   if (CAN1->TSR & CAN_TSR_TME0) //check if mailbox0 is empty
   {
@@ -102,7 +105,7 @@ uint8_t CAN1_transmit_message(struct CANbus_msg_t msg)
   else return 0;
 }
 
-uint8_t CAN1_get_message(struct CANbus_msg_t *msg)
+uint8_t CAN1_get_message(CANbus_msg_t *msg)
 {
   //check for messages in mailbox FIFO0
   if (CAN1->RF0R & CAN_RF0R_FMP0_Msk)
@@ -168,10 +171,17 @@ uint8_t CAN1_messages_pending()
 
 void USB_LP_CAN1_RX0_IRQHandler()
 {
-
+  CANbus_msg_t msg;
+  CAN1_get_message(&msg);
+  ringbuffer_put_msg(msg, &rx_buffer);
+  NVIC_ClearPendingIRQ(USB_LP_CAN1_RX0_IRQn);
 }
+
 void CAN1_RX1_IRQHandler()
 {
-
+  CANbus_msg_t msg;
+  CAN1_get_message(&msg);
+  ringbuffer_put_msg(msg, &rx_buffer);
+  NVIC_ClearPendingIRQ(CAN1_RX1_IRQn);
 }
 

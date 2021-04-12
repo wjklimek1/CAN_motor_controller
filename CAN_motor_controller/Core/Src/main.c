@@ -7,8 +7,10 @@
 #include "uart.h"
 #include "printf.h"
 #include "canbus.h"
+#include "ringbuffer.h"
 
-uint16_t ADC_raw_values[6];
+volatile uint16_t ADC_raw_values[6];
+volatile CANbus_RX_buffer_t rx_buffer;
 
 int main()
 {
@@ -29,7 +31,7 @@ int main()
 
   ADC_init();
   DMA_init();
-  ADC_start_with_DMA(ADC_raw_values);
+  ADC_start_with_DMA((uint16_t*)ADC_raw_values);
 
   UART3_init(32000000, 115200);
 
@@ -38,7 +40,9 @@ int main()
   GPIOC->ODR |= GPIO_ODR_ODR13;
 
   struct CANbus_msg_t msg;
-  msg.stdID = 0x444;
+  struct CANbus_msg_t rx_msg;
+
+  msg.stdID = 0x000;
   msg.DLC = 8;
   msg.RTR = 0;
   msg.data[0] = 0;
@@ -50,15 +54,19 @@ int main()
   msg.data[6] = 6;
   msg.data[7] = 7;
 
+
+  ringbuffer_init((CANbus_RX_buffer_t*)&rx_buffer);
+
   while(1)
   {
-    delay_ms(1000);
-    CAN1_transmit_message(msg);
-
-    //int c = CAN1_get_message(&msg);
-    int a = CAN1_messages_pending();
-    int b = CAN1_messages_pending_FIFO0();
-
     delay_ms(1);
+    if(ringbuffer_elements_pending((CANbus_RX_buffer_t*)&rx_buffer) > 10)
+    {
+      while(ringbuffer_elements_pending((CANbus_RX_buffer_t*)&rx_buffer))
+      {
+	rx_msg = ringbuffer_get_msg((CANbus_RX_buffer_t*)&rx_buffer);
+	printf("id=%d\n", rx_msg.stdID);
+      }
+    }
   }
 }
