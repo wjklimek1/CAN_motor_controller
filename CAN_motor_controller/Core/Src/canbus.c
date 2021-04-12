@@ -58,6 +58,13 @@ uint8_t CAN1_init(uint32_t baudrate)
    * init CAN filters end
    */
 
+  //enable CAN1_RX0 and CAN1_RX1 interrupts
+  CAN1->IER |= (CAN_IER_FMPIE0 | CAN_IER_FMPIE1);
+  NVIC_SetPriority(USB_LP_CAN1_RX0_IRQn, 6);
+  NVIC_EnableIRQ(USB_LP_CAN1_RX0_IRQn);
+  NVIC_SetPriority(CAN1_RX1_IRQn, 7);
+  NVIC_EnableIRQ(CAN1_RX1_IRQn);
+
   CAN1->MCR &= ~CAN_MCR_INRQ;  //exit initialization mode
   while((CAN1->MSR & CAN_MSR_INAK));  //wait for the hardware to confirm entering normal mode
 
@@ -157,5 +164,14 @@ uint8_t CAN1_messages_pending()
   uint8_t FIFO0_pending = (CAN1->RF0R & CAN_RF0R_FMP0_Msk) >> CAN_RF0R_FMP0_Pos;
   uint8_t FIFO1_pending = (CAN1->RF1R & CAN_RF1R_FMP1_Msk) >> CAN_RF1R_FMP1_Pos;
   return FIFO0_pending + FIFO1_pending;
+}
+
+void USB_LP_CAN1_RX0_IRQHandler()
+{
+
+}
+void CAN1_RX1_IRQHandler()
+{
+
 }
 
