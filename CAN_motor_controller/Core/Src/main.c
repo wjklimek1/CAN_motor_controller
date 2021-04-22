@@ -40,8 +40,8 @@ int main()
 
   GPIOC->ODR |= GPIO_ODR_ODR13;
 
-  struct CANbus_msg_t msg;
-  struct CANbus_msg_t rx_msg;
+  CANbus_msg_t msg;
+  CANbus_msg_t rx_msg;
 
   msg.stdID = 0x000;
   msg.DLC = 8;

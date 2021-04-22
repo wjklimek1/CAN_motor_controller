@@ -51,15 +51,20 @@ uint8_t CAN1_init(uint32_t baudrate)
   CAN1->BTR |= ((canbus_presc - 1) << CAN_BTR_BRP_Pos);          //set canbus prescaler
   CAN1->MCR |= CAN_MCR_NART;                                     //disable automatic retransmission
 
-  /*
-   * TODO: init CAN filters here
-   */
-  //disable all filters - for testing only
-  CAN1->FA1R |= (0b1111111111111);
-  CAN1->FMR &= ~(CAN_FMR_FINIT);
-  /*
-   * init CAN filters end
-   */
+  //Init CAN identifier filters
+  CAN1->FMR   |= CAN_FMR_FINIT;                           //enter init mode
+  CAN1->FS1R  |= (CAN_FS1R_FSC0 | CAN_FS1R_FSC1);         //set filters as 32bit values
+
+  CAN1->sFilterRegister[0].FR1 = COMMAND_MSG_ID << 21;    //config filter 0 to pass COMMAND_MSG_ID
+  CAN1->sFilterRegister[0].FR2 = 0x7FF << 21;             //config mask to match all bits
+  CAN1->sFilterRegister[1].FR1 = DATARQ_MSG_ID << 21;     //config filter 1 to pass DATARQ_MSG_ID
+  CAN1->sFilterRegister[1].FR2 = 0x7FF << 21;             //config mask to match all bits
+
+  CAN1->FFA1R &= ~CAN_FFA1R_FFA0;                         //place messages passing through filter 0 in FIFO0
+  CAN1->FFA1R |=  CAN_FFA1R_FFA1;                         //place messages passing through filter 1 in FIFO1
+  CAN1->FM1R  &= ~(CAN_FM1R_FBM0 | CAN_FM1R_FBM1);        //set filter bank 0 and 1 to identifier mask mode
+  CAN1->FA1R |= (CAN_FA1R_FACT0 | CAN_FA1R_FACT1);        //activate filters 0 and 1
+  CAN1->FMR &= ~CAN_FMR_FINIT;                            //exit init mode
 
   //enable CAN1_RX0 and CAN1_RX1 interrupts
   CAN1->IER |= (CAN_IER_FMPIE0 | CAN_IER_FMPIE1);
@@ -145,7 +150,7 @@ uint8_t CAN1_get_message(CANbus_msg_t *msg)
     msg->data[6] = (CAN1->sFIFOMailBox[1].RDHR & 0xFF0000) >> 16;
     msg->data[7] = (CAN1->sFIFOMailBox[1].RDHR & 0xFF000000) >> 24;
 
-    CAN1->RF0R |= CAN_RF1R_RFOM1;  //release mailbox 1
+    CAN1->RF1R |= CAN_RF1R_RFOM1;  //release mailbox 1
 
     return 2;
   }
@@ -171,7 +176,7 @@ uint8_t CAN1_messages_pending()
 
 void USB_LP_CAN1_RX0_IRQHandler()
 {
-  CANbus_msg_t msg;
+  static CANbus_msg_t msg;
   CAN1_get_message(&msg);
   ringbuffer_put_msg(msg, &rx_buffer);
   NVIC_ClearPendingIRQ(USB_LP_CAN1_RX0_IRQn);
@@ -179,7 +184,7 @@ void USB_LP_CAN1_RX0_IRQHandler()
 
 void CAN1_RX1_IRQHandler()
 {
-  CANbus_msg_t msg;
+  static CANbus_msg_t msg;
   CAN1_get_message(&msg);
   ringbuffer_put_msg(msg, &rx_buffer);
   NVIC_ClearPendingIRQ(CAN1_RX1_IRQn);
