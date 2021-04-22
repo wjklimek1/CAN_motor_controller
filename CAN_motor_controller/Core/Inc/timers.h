@@ -8,6 +8,7 @@
 
 void SysTick_init(uint32_t ticks);
 void SysTick_Handler(void);
+uint32_t getTick(void);
 void delay_ms(uint32_t ms);
 void TIM1_init_and_start(void);
 void TIM4_init_and_start(void);

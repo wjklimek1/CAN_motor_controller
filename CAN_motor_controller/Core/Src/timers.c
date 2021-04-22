@@ -4,6 +4,7 @@
 #include "timers.h"
 
 volatile uint32_t ms_counter = 0;
+volatile uint32_t ticks = 0;
 
 void SysTick_init(uint32_t ticks)
 {
@@ -19,8 +20,10 @@ void SysTick_init(uint32_t ticks)
 
 void SysTick_Handler(void)
 {
+  ++ticks;
+
   if (ms_counter > 0)
-    ms_counter--;
+    --ms_counter;
 }
 
 void delay_ms(uint32_t ms)
@@ -28,6 +31,12 @@ void delay_ms(uint32_t ms)
   ms_counter = ms;
   while(ms_counter);
 }
+
+uint32_t getTick(void)
+{
+  return ticks;
+}
+
 
 void TIM1_init_and_start(void)
 {

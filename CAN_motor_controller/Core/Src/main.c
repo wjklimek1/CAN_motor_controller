@@ -8,6 +8,7 @@
 #include "printf.h"
 #include "canbus.h"
 #include "ringbuffer.h"
+#include "thermistor.h"
 
 volatile uint16_t ADC_raw_values[6];
 volatile CANbus_RX_buffer_t rx_buffer;
@@ -54,19 +55,13 @@ int main()
   msg.data[6] = 6;
   msg.data[7] = 7;
 
-
   ringbuffer_init((CANbus_RX_buffer_t*)&rx_buffer);
 
   while(1)
   {
-    delay_ms(1);
-    if(ringbuffer_elements_pending((CANbus_RX_buffer_t*)&rx_buffer) > 10)
-    {
-      while(ringbuffer_elements_pending((CANbus_RX_buffer_t*)&rx_buffer))
-      {
-	rx_msg = ringbuffer_get_msg((CANbus_RX_buffer_t*)&rx_buffer);
-	printf("id=%d\n", rx_msg.stdID);
-      }
-    }
+    float temp = thermistor_getTemperature_steinhart(10000, 10000, 3455, 25);
+
+    GPIOC->ODR |= GPIO_ODR_ODR13;
+    delay_ms(1000);
   }
 }
