@@ -79,7 +79,7 @@ uint8_t CAN1_init(uint32_t baudrate)
   return 1;
 }
 
-uint8_t CAN1_transmit_message(CANbus_msg_t msg)
+int8_t CAN1_transmit_message(CANbus_msg_t msg)
 {
   if (CAN1->TSR & CAN_TSR_TME0) //check if mailbox0 is empty
   {
@@ -99,15 +99,50 @@ uint8_t CAN1_transmit_message(CANbus_msg_t msg)
 
     //transmit message
     CAN1->sTxMailBox[0].TIR |= CAN_TI0R_TXRQ;
-
-    /*
-     * TODO: add error checking after transmission
-     */
-
-    return 1;
-
+    return 2;
   }
-  else return 0;
+  else if (CAN1->TSR & CAN_TSR_TME1) //check if mailbox1 is empty
+  {
+    CAN1->sTxMailBox[1].TIR = 0; //reset all values remaining from last transmission
+    CAN1->sTxMailBox[1].TIR |= (msg.stdID << CAN_TI1R_STID_Pos) & CAN_TI1R_STID_Msk; //set message ID
+    CAN1->sTxMailBox[1].TIR &= ~(CAN_TI1R_IDE); //set ID as standard 11bit ID
+    CAN1->sTxMailBox[1].TIR |= (msg.RTR << CAN_TI1R_RTR_Pos) & CAN_TI1R_RTR_Msk; //set message as RTR or normal
+
+    CAN1->sTxMailBox[1].TDTR = 0; //reset all values remaining from last transmission
+    CAN1->sTxMailBox[1].TDTR |= (msg.DLC << CAN_TDT1R_DLC_Pos) & CAN_TDT1R_DLC_Msk;
+
+    //fill data registers with data from message
+    CAN1->sTxMailBox[1].TDLR = 0;
+    CAN1->sTxMailBox[1].TDLR = (msg.data[3] << 24) | (msg.data[2] << 16) | (msg.data[1] << 8) | msg.data[0];
+    CAN1->sTxMailBox[1].TDHR = 0;
+    CAN1->sTxMailBox[1].TDHR = (msg.data[7] << 24) | (msg.data[6] << 16) | (msg.data[5] << 8) | msg.data[4];
+
+    //transmit message
+    CAN1->sTxMailBox[1].TIR |= CAN_TI1R_TXRQ;
+    return 1;
+  }
+  else if (CAN1->TSR & CAN_TSR_TME2) //check if mailbox1 is empty
+  {
+    CAN1->sTxMailBox[2].TIR = 0; //reset all values remaining from last transmission
+    CAN1->sTxMailBox[2].TIR |= (msg.stdID << CAN_TI2R_STID_Pos) & CAN_TI2R_STID_Msk; //set message ID
+    CAN1->sTxMailBox[2].TIR &= ~(CAN_TI2R_IDE); //set ID as standard 11bit ID
+    CAN1->sTxMailBox[2].TIR |= (msg.RTR << CAN_TI2R_RTR_Pos) & CAN_TI2R_RTR_Msk; //set message as RTR or normal
+
+    CAN1->sTxMailBox[2].TDTR = 0; //reset all values remaining from last transmission
+    CAN1->sTxMailBox[2].TDTR |= (msg.DLC << CAN_TDT2R_DLC_Pos) & CAN_TDT2R_DLC_Msk;
+
+    //fill data registers with data from message
+    CAN1->sTxMailBox[2].TDLR = 0;
+    CAN1->sTxMailBox[2].TDLR = (msg.data[3] << 24) | (msg.data[2] << 16) | (msg.data[1] << 8) | msg.data[0];
+    CAN1->sTxMailBox[2].TDHR = 0;
+    CAN1->sTxMailBox[2].TDHR = (msg.data[7] << 24) | (msg.data[6] << 16) | (msg.data[5] << 8) | msg.data[4];
+
+    //transmit message
+    CAN1->sTxMailBox[1].TIR |= CAN_TI2R_TXRQ;
+    return 0;
+  }
+
+  else return -1;  //return error if all mailboxes are filled
 }
 
 uint8_t CAN1_get_message(CANbus_msg_t *msg)

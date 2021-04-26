@@ -3,7 +3,7 @@
 #include "canbus.h"
 #include "ringbuffer.h"
 
-void ringbuffer_init(CANbus_RX_buffer_t *rx_buffer)
+void ringbuffer_init(volatile CANbus_RX_buffer_t *rx_buffer)
 {
   rx_buffer->head = 0;
   rx_buffer->tail = 0;
@@ -11,12 +11,12 @@ void ringbuffer_init(CANbus_RX_buffer_t *rx_buffer)
 
 }
 
-uint8_t ringbuffer_elements_pending(CANbus_RX_buffer_t *rx_buffer)
+uint8_t ringbuffer_elements_pending(volatile CANbus_RX_buffer_t *rx_buffer)
 {
   return rx_buffer->elements;
 }
 
-uint8_t ringbuffer_put_msg(CANbus_msg_t msg, CANbus_RX_buffer_t *rx_buffer)
+uint8_t ringbuffer_put_msg(CANbus_msg_t msg, volatile CANbus_RX_buffer_t *rx_buffer)
 {
   uint8_t head_tmp = rx_buffer->head + 1;
 
@@ -33,7 +33,7 @@ uint8_t ringbuffer_put_msg(CANbus_msg_t msg, CANbus_RX_buffer_t *rx_buffer)
   return 1;
 }
 
-CANbus_msg_t ringbuffer_get_msg(CANbus_RX_buffer_t *rx_buffer)
+CANbus_msg_t ringbuffer_get_msg(volatile CANbus_RX_buffer_t *rx_buffer)
 {
   rx_buffer->elements--;
   rx_buffer->tail++;

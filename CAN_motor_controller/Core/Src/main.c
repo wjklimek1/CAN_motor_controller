@@ -55,7 +55,7 @@ int main()
   msg.data[6] = 6;
   msg.data[7] = 7;
 
-  ringbuffer_init((CANbus_RX_buffer_t*)&rx_buffer);
+  ringbuffer_init(&rx_buffer);
 
   while(1)
   {

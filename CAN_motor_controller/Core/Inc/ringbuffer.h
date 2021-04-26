@@ -11,9 +11,9 @@ typedef struct CANbus_RX_buffer_t
   CANbus_msg_t buffer[RINGBUFFER_SIZE];
 } CANbus_RX_buffer_t;
 
-void ringbuffer_init(CANbus_RX_buffer_t *rx_buffer);
-uint8_t ringbuffer_elements_pending(CANbus_RX_buffer_t *rx_buffer);
-uint8_t ringbuffer_put_msg(CANbus_msg_t msg, CANbus_RX_buffer_t *rx_buffer);
-CANbus_msg_t ringbuffer_get_msg(CANbus_RX_buffer_t *rx_buffer);
+void ringbuffer_init(volatile CANbus_RX_buffer_t *rx_buffer);
+uint8_t ringbuffer_elements_pending(volatile  CANbus_RX_buffer_t *rx_buffer);
+uint8_t ringbuffer_put_msg(CANbus_msg_t msg, volatile CANbus_RX_buffer_t *rx_buffer);
+CANbus_msg_t ringbuffer_get_msg(volatile CANbus_RX_buffer_t *rx_buffer);
 
 #endif /* RINGBUFFER_H */
