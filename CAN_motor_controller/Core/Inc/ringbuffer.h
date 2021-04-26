@@ -1,3 +1,19 @@
+/**
+ ****************************************************************************************
+ *
+ * \file ringbuffer.h
+ *
+ * \brief Header for circular buffer (FIFO) keeping incoming CANbus messages for further processing.
+ *
+ * Buffer keeps maximum amount of messages defined with RINGBUFFER_SIZE constant. In case of buffer overflow the oldest message is replaced by newest.
+ *
+ * Copyright (C) 2021 Wojciech Klimek
+ * MIT license:
+ * https://github.com/wjklimek1/CAN_motor_controller
+ *
+ ****************************************************************************************
+ */
+
 #ifndef RINGBUFFER_H
 #define RINGBUFFER_H
 

@@ -18,7 +18,7 @@ void UART3_init(uint32_t sys_core_clk, uint32_t baudrate)
   USART3->CR1 |= USART_CR1_UE;           //enable peripherial
 
   //configure baudrate
-  uint32_t uartdiv = sys_core_clk / baudrate;
+  uint32_t uartdiv = (sys_core_clk / 2) / baudrate;
   USART3->BRR = (((uartdiv / 16) << USART_BRR_DIV_Mantissa_Pos) | ((uartdiv % 16) << USART_BRR_DIV_Fraction_Pos)); //set baudrate configuration
   USART3->CR1 |= USART_CR1_TE; //enable transmission - send idle frame at the beggining
 }

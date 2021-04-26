@@ -47,16 +47,10 @@ void ADC_init(void)
   ADC1->SMPR1 |= ADC_SMPR1_SMP16;
 }
 
-void DMA_init(void)
-{
-  RCC->AHBENR |= RCC_AHBENR_DMA1EN; //enable DMA1 clock
-  NVIC_SetPriority(DMA1_Channel1_IRQn, 8);
-  NVIC_EnableIRQ(DMA1_Channel1_IRQn);
-}
-
 void ADC_start_with_DMA(uint16_t *results_array)
 {
   // DMA initialization and start
+  RCC->AHBENR |= RCC_AHBENR_DMA1EN;               //enable DMA1 clock
   DMA1_Channel1->CCR &= ~(DMA_CCR_EN);            //disble DMA channel associated with ADC1
   DMA1_Channel1->CPAR = (uint32_t) &ADC1->DR;     //set peripherial address to read from ADC's data register
   DMA1_Channel1->CMAR = (uint32_t) results_array; //set memory address to write to

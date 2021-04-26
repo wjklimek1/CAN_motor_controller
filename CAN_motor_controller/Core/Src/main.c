@@ -31,10 +31,9 @@ int main()
   TIM1->CCR2 = 300;
 
   ADC_init();
-  DMA_init();
   ADC_start_with_DMA((uint16_t*)ADC_raw_values);
 
-  UART3_init(32000000, 115200);
+  UART3_init(64000000, 115200);
 
   CAN1_init(250000);
 
