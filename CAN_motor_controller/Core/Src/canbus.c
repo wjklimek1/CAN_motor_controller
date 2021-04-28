@@ -49,7 +49,7 @@ uint8_t CAN1_init(uint32_t baudrate)
   CAN1->BTR |= ((canbus_bit_segment_2 - 1) << CAN_BTR_TS2_Pos);  //set time segment 2
   CAN1->BTR |= ((canbus_bit_segment_1 - 1) << CAN_BTR_TS1_Pos);  //set time segment 1
   CAN1->BTR |= ((canbus_presc - 1) << CAN_BTR_BRP_Pos);          //set canbus prescaler
-  CAN1->MCR |= CAN_MCR_NART;                                     //disable automatic retransmission
+  CAN1->MCR &= ~(CAN_MCR_NART);                                  //enable automatic retransmission
 
   //Init CAN identifier filters
   CAN1->FMR   |= CAN_FMR_FINIT;                           //enter init mode
