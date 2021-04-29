@@ -33,6 +33,11 @@ uint8_t get_temperature_external();
 uint16_t get_voltage();
 uint16_t get_current();
 
+void set_speed(CANbus_msg_t msg);
+void set_max_curr(CANbus_msg_t msg);
+void set_max_temp_int(CANbus_msg_t msg);
+void set_max_temp_ext(CANbus_msg_t msg);
+
 void motor_set_target_speed(uint8_t dir, uint8_t target_speed);
 
 #endif

@@ -1,3 +1,19 @@
+/**
+ ****************************************************************************************
+ *
+ * \file canbus.c
+ *
+ * \brief Functions operating on registers of bxCAN peripharial in STM32F103C8T6 microcontroller.
+ *
+ * Mesages are received in interrupts. Received message is placed in ringbuffer.
+ *
+ * Copyright (C) 2021 Wojciech Klimek
+ * MIT license:
+ * https://github.com/wjklimek1/CAN_motor_controller
+ *
+ ****************************************************************************************
+ */
+
 #include <stdint.h>
 #include "stm32f103xb.h"
 
@@ -5,6 +21,21 @@
 #include "ringbuffer.h"
 
 extern volatile CANbus_RX_buffer_t rx_buffer;
+
+//====================== initialization ========================//
+/**
+ *  @brief Initializes CAN1 with given baudrate on pins PB8 as CAN_RX and PB9 as CAN_TX.
+ *
+ *  Available baudrates are: 250kb/s, 500kb/s 1Mb/s
+ *
+ *  This function also configures CAN filters to pass only messages with ID equal to DATA_MSG_ID or DATA_RQ_ID.
+ *  This constants are defined in canbus.h file. Messages with ID = DATA_MSG_ID are placed in FIFO0 and ones with ID = DATA_MSG_ID are placed in FIFO1.
+ *
+ *  @param[in] baudrate CAN1 baudrate in b/s (250000 for 250kb/s and so on)
+ *
+ *  @retval 0: baudrate not supported, CAN1 not initialized
+ *  @retval 1: initialization correct
+ */
 
 uint8_t CAN1_init(uint32_t baudrate)
 {
@@ -68,17 +99,32 @@ uint8_t CAN1_init(uint32_t baudrate)
   CAN1->FMR &= ~CAN_FMR_FINIT;                            //exit init mode
 
   //enable CAN1_RX0 and CAN1_RX1 interrupts
-  CAN1->IER |= (CAN_IER_FMPIE0 | CAN_IER_FMPIE1);
-  NVIC_SetPriority(USB_LP_CAN1_RX0_IRQn, 6);
-  NVIC_EnableIRQ(USB_LP_CAN1_RX0_IRQn);
-  NVIC_SetPriority(CAN1_RX1_IRQn, 7);
-  NVIC_EnableIRQ(CAN1_RX1_IRQn);
+  CAN1->IER |= (CAN_IER_FMPIE0 | CAN_IER_FMPIE1);   //enable interrupts for receiving
+  NVIC_SetPriority(USB_LP_CAN1_RX0_IRQn, 6);        //set RX0 interrupt to 6 in NVIC
+  NVIC_EnableIRQ(USB_LP_CAN1_RX0_IRQn);             //enable RX0 interrupt in NVIC
+  NVIC_SetPriority(CAN1_RX1_IRQn, 7);               //set RX1 interrupt to 6 in NVIC
+  NVIC_EnableIRQ(CAN1_RX1_IRQn);                    //enable RX1 interrupt in NVIC
 
-  CAN1->MCR &= ~CAN_MCR_INRQ;  //exit initialization mode
+  CAN1->MCR &= ~CAN_MCR_INRQ;         //exit initialization mode
   while((CAN1->MSR & CAN_MSR_INAK));  //wait for the hardware to confirm entering normal mode
 
   return 1;
 }
+
+//====================== transmit message ========================//
+/**
+ *  @brief Places CAN message in transmission mailbox.
+ *
+ *  After placing message in TX mailbox it will be automatically send by hardware.
+ *  Return value indicates empty places in mailbox. If it is equal -1 message was not transmitted because there ware no empty mailboxes.
+ *
+ *  @param[in] msg CAN message to transmit
+ *
+ *  @retval -1: no emty mailboxes, transmission has to be repeated
+ *  @retval  0: message placed, all mailboxes are true
+ *  @retval  1: message placed, 1 mailbox still free
+ *  @retval  2: message placed, 2 mailboxes still free
+ */
 
 int8_t CAN1_transmit_message(CANbus_msg_t msg)
 {
@@ -146,6 +192,20 @@ int8_t CAN1_transmit_message(CANbus_msg_t msg)
   else return -1;  //return error if all mailboxes are filled
 }
 
+//====================== receive message ========================//
+/**
+ *  @brief Gets message from receive FIFO.
+ *
+ *  If there is a pending message in one of receive mailboxes, this function rewrites all of it's content to
+ *  given message structure and releases mailbox.
+ *
+ *  @param[in] msg pointer to CAN message data structure
+ *
+ *  @retval  0: no messages available in FIFOs
+ *  @retval  1: message received from FIFO0
+ *  @retval  2: message received from FIFO1
+ */
+
 uint8_t CAN1_get_message(CANbus_msg_t *msg)
 {
   //check for messages in mailbox FIFO0
@@ -193,16 +253,33 @@ uint8_t CAN1_get_message(CANbus_msg_t *msg)
   else return 0;
 }
 
+//====================== messages pending in FIFOs ========================//
+
+/**
+ *  @brief Returns amount of messages in FIFO0.
+ *
+ *  @return amount of messages waiting in FIFO0
+ */
 uint8_t CAN1_messages_pending_FIFO0()
 {
   return (CAN1->RF0R & CAN_RF0R_FMP0_Msk) >> CAN_RF0R_FMP0_Pos;
 }
 
+/**
+ *  @brief Returns amount of messages in FIFO1.
+ *
+ *  @return amount of messages waiting in FIFO1
+ */
 uint8_t CAN1_messages_pending_FIFO1()
 {
   return (CAN1->RF1R & CAN_RF1R_FMP1_Msk) >> CAN_RF1R_FMP1_Pos;
 }
 
+/**
+ *  @brief Returns sum of messages in FIFO0 and FIFO1.
+ *
+ *  @return sum of messages waiting in FIFO0 and FIFO1
+ */
 uint8_t CAN1_messages_pending()
 {
   uint8_t FIFO0_pending = (CAN1->RF0R & CAN_RF0R_FMP0_Msk) >> CAN_RF0R_FMP0_Pos;
@@ -210,6 +287,9 @@ uint8_t CAN1_messages_pending()
   return FIFO0_pending + FIFO1_pending;
 }
 
+/**
+ *  @brief Interrupt handler for receiving messages form FIFO0.
+ */
 void USB_LP_CAN1_RX0_IRQHandler()
 {
   static CANbus_msg_t msg;
@@ -218,6 +298,11 @@ void USB_LP_CAN1_RX0_IRQHandler()
   NVIC_ClearPendingIRQ(USB_LP_CAN1_RX0_IRQn);
 }
 
+//====================== interrupt handlers ========================//
+
+/**
+ *  @brief Interrupt handler for receiving messages form FIFO1.
+ */
 void CAN1_RX1_IRQHandler()
 {
   static CANbus_msg_t msg;
