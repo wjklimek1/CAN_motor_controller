@@ -152,8 +152,9 @@ void transmit_motor_speed()
   msg.DLC = 4;
 
   msg.data[0] = GET_SPEED;
-  msg.data[1] = _motor_speed >> 8;     //MSB of motor speed variable
-  msg.data[2] = _motor_speed & 0x00FF; //LSB of motor speed variable
+  msg.data[1] = _motor_dir;
+  msg.data[2] = _motor_speed >> 8;     //MSB of motor speed variable
+  msg.data[3] = _motor_speed & 0x00FF; //LSB of motor speed variable
 
   while(CAN1_transmit_message(msg) < 0);
 }
@@ -166,8 +167,9 @@ void transmit_target_motor_speed()
   msg.DLC = 4;
 
   msg.data[0] = GET_TARGET_SPEED;
-  msg.data[1] = _target_motor_speed >> 8;     //MSB of targetmotor speed variable
-  msg.data[2] = _target_motor_speed & 0x00FF; //LSB of motor speed variable
+  msg.data[1] = _target_motor_dir;
+  msg.data[2] = _target_motor_speed >> 8;     //MSB of targetmotor speed variable
+  msg.data[3] = _target_motor_speed & 0x00FF; //LSB of motor speed variable
 
   while(CAN1_transmit_message(msg) < 0);
 }
@@ -175,7 +177,7 @@ void transmit_target_motor_speed()
 uint8_t get_temperature_internal()
 {
   uint32_t millivolts = ADC_raw_values[1] * 3300 / 4095;
-  uint32_t resistance = (millivolts * 10000) / (3300 - millivolts);
+  uint32_t resistance = (millivolts * 10000) / (3301 - millivolts);
   float temperature = thermistor_getTemperature_steinhart(resistance, 10000, 3455, 25);
   return (uint8_t) temperature;
 }
@@ -183,7 +185,7 @@ uint8_t get_temperature_internal()
 uint8_t get_temperature_external()
 {
   uint32_t millivolts = ADC_raw_values[2] * 3300 / 4095;
-  uint32_t resistance = (millivolts * 10000) / (3300 - millivolts);
+  uint32_t resistance = (millivolts * 10000) / (3301 - millivolts);
   float temperature = thermistor_getTemperature_steinhart(resistance, 10000, 3455, 25);
   return (uint8_t) temperature;
 }
@@ -191,7 +193,8 @@ uint8_t get_temperature_external()
 uint16_t get_voltage()
 {
   //exact formula: (Vref/MaxADCval)*ADC_reading * (10/1.1) where 10/1.1 is voltage divider constant
-  uint32_t millivolts = 100 * ADC_raw_values[0] * 3300 / 4095 / 11;
+  uint32_t millivolts = ADC_raw_values[0] * 3300 / 4095;
+  millivolts = millivolts*(10000+1100)/1100;
   return (uint16_t) millivolts;
 }
 
@@ -243,10 +246,11 @@ void follow_target_speed()
       TIM1->CCR1 = _motor_speed;
       TIM1->CCR2 = 0;
     }
-    else
+    if (_motor_speed > _target_motor_speed)
     {
       --_motor_speed;
       TIM1->CCR1 = _motor_speed;
+      TIM1->CCR2 = 0;
     }
   }
   if (_target_motor_dir == 1 && _motor_dir == 0)
@@ -254,8 +258,8 @@ void follow_target_speed()
     if (_motor_speed > 0)
     {
       --_motor_speed;
-      TIM1->CCR1 = _motor_speed;
-      TIM1->CCR2 = 0;
+      TIM1->CCR2 = _motor_speed;
+      TIM1->CCR1 = 0;
     }
     if (_motor_speed == 0)
     {
@@ -267,7 +271,8 @@ void follow_target_speed()
     if (_motor_speed > 0)
     {
       --_motor_speed;
-      TIM1->CCR2 = _motor_speed;
+      TIM1->CCR1 = _motor_speed;
+      TIM1->CCR2 = 0;
     }
     if (_motor_speed == 0)
     {
@@ -280,11 +285,13 @@ void follow_target_speed()
     {
       ++_motor_speed;
       TIM1->CCR2 = _motor_speed;
+      TIM1->CCR1 = 0;
     }
-    else
+    if (_motor_speed > _target_motor_speed)
     {
       --_motor_speed;
       TIM1->CCR2 = _motor_speed;
+      TIM1->CCR1 = 0;
     }
   }
 }

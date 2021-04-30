@@ -40,13 +40,6 @@ int main()
 
     float temp = get_temperature_internal();
 
-    if(x != 0)
-    {
-      delay_ms(1);
-    }
-
-    delay_ms(10);
-
     CANbus_msg_t msg;
     msg.DLC = 5;
     msg.stdID = 0x400;
@@ -57,5 +50,7 @@ int main()
       delay_ms(1);
     }
 
+    delay_ms(10);
+    follow_target_speed();
   }
 }
