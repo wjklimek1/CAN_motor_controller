@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include "stm32f103xb.h"
 
 #include "timers.h"
 #include "clock.h"
@@ -190,7 +191,7 @@ uint8_t get_temperature_external()
 uint16_t get_voltage()
 {
   //exact formula: (Vref/MaxADCval)*ADC_reading * (10/1.1) where 10/1.1 is voltage divider constant
-  uint32_t millivolts = 100*ADC_raw_values[0] * 3300 / 4095/11;
+  uint32_t millivolts = 100 * ADC_raw_values[0] * 3300 / 4095 / 11;
   return (uint16_t) millivolts;
 }
 
@@ -207,7 +208,6 @@ uint16_t get_current()
   //TODO: add current sense calculation here
 
   millivolts -= 80; //subtract offset current
-
 
   return current;
 }
@@ -231,4 +231,60 @@ void set_max_temp_int(CANbus_msg_t msg)
 void set_max_temp_ext(CANbus_msg_t msg)
 {
   _max_temperature_ext = msg.data[1];
+}
+
+void follow_target_speed()
+{
+  if (_target_motor_dir == 1 && _motor_dir == 1)
+  {
+    if (_motor_speed < _target_motor_speed)
+    {
+      ++_motor_speed;
+      TIM1->CCR1 = _motor_speed;
+      TIM1->CCR2 = 0;
+    }
+    else
+    {
+      --_motor_speed;
+      TIM1->CCR1 = _motor_speed;
+    }
+  }
+  if (_target_motor_dir == 1 && _motor_dir == 0)
+  {
+    if (_motor_speed > 0)
+    {
+      --_motor_speed;
+      TIM1->CCR1 = _motor_speed;
+      TIM1->CCR2 = 0;
+    }
+    if (_motor_speed == 0)
+    {
+      _motor_dir = 1;
+    }
+  }
+  if (_target_motor_dir == 0 && _motor_dir == 1)
+  {
+    if (_motor_speed > 0)
+    {
+      --_motor_speed;
+      TIM1->CCR2 = _motor_speed;
+    }
+    if (_motor_speed == 0)
+    {
+      _motor_dir = 0;
+    }
+  }
+  if (_target_motor_dir == 0 && _motor_dir == 0)
+  {
+    if (_motor_speed < _target_motor_speed)
+    {
+      ++_motor_speed;
+      TIM1->CCR2 = _motor_speed;
+    }
+    else
+    {
+      --_motor_speed;
+      TIM1->CCR2 = _motor_speed;
+    }
+  }
 }

@@ -38,6 +38,6 @@ void set_max_curr(CANbus_msg_t msg);
 void set_max_temp_int(CANbus_msg_t msg);
 void set_max_temp_ext(CANbus_msg_t msg);
 
-void motor_set_target_speed(uint8_t dir, uint8_t target_speed);
+void follow_target_speed();
 
 #endif
