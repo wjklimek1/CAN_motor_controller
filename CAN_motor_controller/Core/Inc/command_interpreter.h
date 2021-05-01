@@ -5,6 +5,8 @@
 #define SET_MAX_TEMP_INTERNAL 0x02
 #define SET_MAX_TEMP_EXTERNAL 0x03
 #define SET_MAX_CURR          0x04
+#define EMERGENCY_STOP        0x05
+#define SET_INERTIA           0x06
 
 #define GET_TEMP_INTERNAL     0x01
 #define GET_TEMP_EXTERNAL     0x02
@@ -32,12 +34,16 @@ uint8_t get_temperature_internal();
 uint8_t get_temperature_external();
 uint16_t get_voltage();
 uint8_t get_current();
+uint8_t get_mosfet_fault();
 
 void set_speed(CANbus_msg_t msg);
 void set_max_curr(CANbus_msg_t msg);
 void set_max_temp_int(CANbus_msg_t msg);
 void set_max_temp_ext(CANbus_msg_t msg);
+void set_motor_inertia(CANbus_msg_t msg);
 
+void transmit_heartbeat();
+void emergency_stop();
 void follow_target_speed();
 
 #endif

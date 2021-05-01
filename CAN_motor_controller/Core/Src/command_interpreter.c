@@ -14,12 +14,14 @@
 extern volatile uint16_t ADC_raw_values[6];
 extern volatile CANbus_RX_buffer_t rx_buffer;
 
+uint8_t _motor_inertia = 10;
+uint8_t _emergency_stop = 0;
 uint8_t _motor_dir = 0;
 uint16_t _motor_speed = 0;
 uint8_t _target_motor_dir = 0;
 uint16_t _target_motor_speed = 0;
 
-uint16_t _max_current = 30;
+uint8_t _max_current = 30;
 uint8_t _max_temperature_int = 90;
 uint8_t _max_temperature_ext = 90;
 
@@ -44,6 +46,12 @@ int8_t command_interpreter(volatile CANbus_RX_buffer_t *rx_buffer)
 	  break;
 	case SET_MAX_TEMP_EXTERNAL:
 	  set_max_temp_ext(msg);
+	  break;
+	case EMERGENCY_STOP:
+	  emergency_stop();
+	  break;
+	case SET_INERTIA:
+	  set_motor_inertia(msg);
 	  break;
 	default:
 	  return UNKNOWN_COMMAND;
@@ -194,17 +202,16 @@ uint16_t get_voltage()
 {
   //exact formula: (Vref/MaxADCval)*ADC_reading * (10/1.1) where 10/1.1 is voltage divider constant
   uint32_t millivolts = ADC_raw_values[0] * 3300 / 4095;
-  millivolts = millivolts*(10000+1100)/1100;
+  millivolts = millivolts * (10000 + 1100) / 1100;
   return (uint16_t) millivolts;
 }
-
-static float current = 0;
 
 uint8_t get_current()
 {
   const float alpha = 0.1;
   float millivolts;
   float Isense;
+  static float current = 0;
   static float new_current = 0;
 
   if (ADC_raw_values[3] >= ADC_raw_values[4])
@@ -212,21 +219,38 @@ uint8_t get_current()
   if (ADC_raw_values[3] < ADC_raw_values[4])
     millivolts = ADC_raw_values[4] * 3300 / 4095;
 
-  Isense = (millivolts/470) - 0.170f;
-  new_current = Isense*9.165f*1000;
+  Isense = (millivolts / 470) - 0.170f;
+  new_current = Isense * 9.165f * 1000;
 
-  current = alpha * new_current + (1-alpha) * current;
+  current = alpha * new_current + (1 - alpha) * current;
 
-  if(current < 0)
-	  return 0;
+  if (current < 0)
+    return 0;
 
-  return (uint8_t)(current/1000);
+  return (uint8_t) (current / 1000);
+}
+
+uint8_t get_mosfet_fault()
+{
+  if (ADC_raw_values[3] > 2700)
+    return 1;
+  if (ADC_raw_values[4] > 2700)
+    return 1;
+
+  return 0;
 }
 
 void set_speed(CANbus_msg_t msg)
 {
+  _emergency_stop = 0;
   _target_motor_dir = msg.data[1];
   _target_motor_speed = msg.data[2] << 8 | msg.data[3];
+
+  if (_target_motor_speed > 1000)
+    _target_motor_speed = 1000;
+
+  if (_target_motor_dir > 1)
+    _target_motor_dir = 1;
 }
 
 void set_max_curr(CANbus_msg_t msg)
@@ -244,62 +268,94 @@ void set_max_temp_ext(CANbus_msg_t msg)
   _max_temperature_ext = msg.data[1];
 }
 
+void set_motor_inertia(CANbus_msg_t msg)
+{
+  _motor_inertia = msg.data[1];
+}
+
+void transmit_heartbeat()
+{
+  CANbus_msg_t msg;
+  msg.DLC = 0;
+  msg.stdID = COMMAND_MSG_ID;
+  CAN1_transmit_message(msg);
+}
+
+void emergency_stop()
+{
+  TIM1->CCR1 = 0;
+  TIM1->CCR2 = 0;
+  _emergency_stop = 1;
+  _target_motor_dir = 0;
+  _target_motor_speed = 0;
+}
+
 void follow_target_speed()
 {
-  if (_target_motor_dir == 1 && _motor_dir == 1)
+  static uint32_t timer = 0;
+
+  if (_emergency_stop == 1)  //if device is in emergency stop mode, return
+    return;
+
+  if (getTick() - timer > _motor_inertia)  //if time defined by _motor_inertia passed, go further
   {
-    if (_motor_speed < _target_motor_speed)
+    timer = getTick();
+
+    if (_target_motor_dir == 1 && _motor_dir == 1)
     {
-      ++_motor_speed;
-      TIM1->CCR1 = _motor_speed;
-      TIM1->CCR2 = 0;
+      if (_motor_speed < _target_motor_speed)
+      {
+	++_motor_speed;
+	TIM1->CCR1 = _motor_speed;
+	TIM1->CCR2 = 0;
+      }
+      if (_motor_speed > _target_motor_speed)
+      {
+	--_motor_speed;
+	TIM1->CCR1 = _motor_speed;
+	TIM1->CCR2 = 0;
+      }
     }
-    if (_motor_speed > _target_motor_speed)
+    if (_target_motor_dir == 1 && _motor_dir == 0)
     {
-      --_motor_speed;
-      TIM1->CCR1 = _motor_speed;
-      TIM1->CCR2 = 0;
+      if (_motor_speed > 0)
+      {
+	--_motor_speed;
+	TIM1->CCR2 = _motor_speed;
+	TIM1->CCR1 = 0;
+      }
+      if (_motor_speed == 0)
+      {
+	_motor_dir = 1;
+      }
     }
-  }
-  if (_target_motor_dir == 1 && _motor_dir == 0)
-  {
-    if (_motor_speed > 0)
+    if (_target_motor_dir == 0 && _motor_dir == 1)
     {
-      --_motor_speed;
-      TIM1->CCR2 = _motor_speed;
-      TIM1->CCR1 = 0;
+      if (_motor_speed > 0)
+      {
+	--_motor_speed;
+	TIM1->CCR1 = _motor_speed;
+	TIM1->CCR2 = 0;
+      }
+      if (_motor_speed == 0)
+      {
+	_motor_dir = 0;
+      }
     }
-    if (_motor_speed == 0)
+    if (_target_motor_dir == 0 && _motor_dir == 0)
     {
-      _motor_dir = 1;
-    }
-  }
-  if (_target_motor_dir == 0 && _motor_dir == 1)
-  {
-    if (_motor_speed > 0)
-    {
-      --_motor_speed;
-      TIM1->CCR1 = _motor_speed;
-      TIM1->CCR2 = 0;
-    }
-    if (_motor_speed == 0)
-    {
-      _motor_dir = 0;
-    }
-  }
-  if (_target_motor_dir == 0 && _motor_dir == 0)
-  {
-    if (_motor_speed < _target_motor_speed)
-    {
-      ++_motor_speed;
-      TIM1->CCR2 = _motor_speed;
-      TIM1->CCR1 = 0;
-    }
-    if (_motor_speed > _target_motor_speed)
-    {
-      --_motor_speed;
-      TIM1->CCR2 = _motor_speed;
-      TIM1->CCR1 = 0;
+      if (_motor_speed < _target_motor_speed)
+      {
+	++_motor_speed;
+	TIM1->CCR2 = _motor_speed;
+	TIM1->CCR1 = 0;
+      }
+      if (_motor_speed > _target_motor_speed)
+      {
+	--_motor_speed;
+	TIM1->CCR2 = _motor_speed;
+	TIM1->CCR1 = 0;
+      }
     }
   }
 }

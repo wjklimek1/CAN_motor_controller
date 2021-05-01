@@ -28,24 +28,13 @@ int main()
   ringbuffer_init(&rx_buffer);
 
   RCC->APB2ENR |= RCC_APB2ENR_IOPCEN;  //enable gpio port C clock
-
   GPIOC->CRH &= ~(GPIO_CRH_MODE13_Msk);
   GPIOC->CRH |= (GPIO_CRH_MODE13_1);
-  GPIOC->CRH &= ~(GPIO_CRH_CNF13_Msk);
-  //GPIOC->ODR |= GPIO_ODR_ODR13;
+  GPIOC->CRH &= ~(GPIO_CRH_CNF13_Msk); //turn on LED
 
   while(1)
   {
-    int x = command_interpreter(&rx_buffer);
-    float temp = get_temperature_internal();
-    uint16_t curr = get_current();
-
-    CANbus_msg_t msg;
-    msg.DLC = 5;
-    msg.stdID = 0x400;
-    CAN1_transmit_message(msg);
-
-    delay_ms(10);
+    command_interpreter(&rx_buffer);
     follow_target_speed();
   }
 }
