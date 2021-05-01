@@ -37,18 +37,13 @@ int main()
   while(1)
   {
     int x = command_interpreter(&rx_buffer);
-
     float temp = get_temperature_internal();
+    uint16_t curr = get_current();
 
     CANbus_msg_t msg;
     msg.DLC = 5;
     msg.stdID = 0x400;
-    x = CAN1_transmit_message(msg);
-
-    if(x != 2)
-    {
-      delay_ms(1);
-    }
+    CAN1_transmit_message(msg);
 
     delay_ms(10);
     follow_target_speed();

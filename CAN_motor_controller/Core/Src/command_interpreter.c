@@ -198,21 +198,29 @@ uint16_t get_voltage()
   return (uint16_t) millivolts;
 }
 
-uint16_t get_current()
+static float current = 0;
+
+uint8_t get_current()
 {
-  int32_t millivolts;
-  uint16_t current;
+  const float alpha = 0.1;
+  float millivolts;
+  float Isense;
+  static float new_current = 0;
 
   if (ADC_raw_values[3] >= ADC_raw_values[4])
     millivolts = ADC_raw_values[3] * 3300 / 4095;
   if (ADC_raw_values[3] < ADC_raw_values[4])
     millivolts = ADC_raw_values[4] * 3300 / 4095;
 
-  //TODO: add current sense calculation here
+  Isense = (millivolts/470) - 0.170f;
+  new_current = Isense*9.165f*1000;
 
-  millivolts -= 80; //subtract offset current
+  current = alpha * new_current + (1-alpha) * current;
 
-  return current;
+  if(current < 0)
+	  return 0;
+
+  return (uint8_t)(current/1000);
 }
 
 void set_speed(CANbus_msg_t msg)
