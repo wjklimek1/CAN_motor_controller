@@ -286,6 +286,8 @@ void emergency_stop()
   TIM1->CCR1 = 0;
   TIM1->CCR2 = 0;
   _emergency_stop = 1;
+  _motor_speed = 0;
+  _motor_dir = 0;
   _target_motor_dir = 0;
   _target_motor_speed = 0;
 }
