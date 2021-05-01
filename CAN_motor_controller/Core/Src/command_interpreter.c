@@ -14,6 +14,7 @@
 extern volatile uint16_t ADC_raw_values[6];
 extern volatile CANbus_RX_buffer_t rx_buffer;
 
+uint8_t _heartbeat_interval = 1;
 uint8_t _motor_inertia = 10;
 uint8_t _emergency_stop = 0;
 uint8_t _motor_dir = 0;
@@ -53,6 +54,9 @@ int8_t command_interpreter(volatile CANbus_RX_buffer_t *rx_buffer)
 	case SET_INERTIA:
 	  set_motor_inertia(msg);
 	  break;
+	case SET_HEARTBEAT:
+	  set_heartbeat(msg);
+	  break;
 	default:
 	  return UNKNOWN_COMMAND;
 	  break;
@@ -79,6 +83,9 @@ int8_t command_interpreter(volatile CANbus_RX_buffer_t *rx_buffer)
 	  break;
 	case GET_TARGET_SPEED:
 	  transmit_target_motor_speed();
+	  break;
+	case GET_ERRORS:
+	  transmit_errors();
 	  break;
 	default:
 	  return UNKNOWN_DATARQ;
@@ -182,6 +189,42 @@ void transmit_target_motor_speed()
   while(CAN1_transmit_message(msg) < 0);
 }
 
+void transmit_errors()
+{
+  CANbus_msg_t msg;
+  msg.stdID = DATARQ_MSG_ID;
+  msg.RTR = 0;
+  msg.DLC = 5;
+
+  msg.data[0] = GET_ERRORS;
+  if(get_mosfet_fault() == 1)
+	msg.data[1] = 1;
+  else
+	msg.data[1] = 0;
+
+  if(get_current() > _max_current)
+	msg.data[2] = 1;
+  else
+  	msg.data[2] = 0;
+
+  if(get_temperature_internal() > _max_temperature_ext)
+	msg.data[3] = 1;
+  else
+  	msg.data[3] = 0;
+
+  if(get_temperature_external() > _max_temperature_ext)
+	msg.data[4] = 1;
+  else
+  	msg.data[4] = 0;
+
+  if(_emergency_stop == 1)
+	msg.data[4] = 1;
+  else
+	msg.data[4] = 0;
+
+  while(CAN1_transmit_message(msg) < 0);
+}
+
 uint8_t get_temperature_internal()
 {
   uint32_t millivolts = ADC_raw_values[1] * 3300 / 4095;
@@ -273,12 +316,25 @@ void set_motor_inertia(CANbus_msg_t msg)
   _motor_inertia = msg.data[1];
 }
 
+void set_heartbeat(CANbus_msg_t msg)
+{
+  _heartbeat_interval = msg.data[1];
+}
+
 void transmit_heartbeat()
 {
-  CANbus_msg_t msg;
-  msg.DLC = 0;
-  msg.stdID = COMMAND_MSG_ID;
-  CAN1_transmit_message(msg);
+  if(_heartbeat_interval == 0)  //if interval is 0, heartbeat is disabled
+	  return;
+
+  static uint32_t timer = 0;
+  if (getTick() - timer > _heartbeat_interval*1000)  //if time defined by _heartbeat_interval passed, transmit heartbeat;
+  {
+	timer = getTick();
+    CANbus_msg_t msg;
+    msg.DLC = 0;
+    msg.stdID = COMMAND_MSG_ID;
+    while(CAN1_transmit_message(msg) < 0);
+  }
 }
 
 void emergency_stop()

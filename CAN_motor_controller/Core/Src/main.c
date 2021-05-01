@@ -36,5 +36,6 @@ int main()
   {
     command_interpreter(&rx_buffer);
     follow_target_speed();
+    transmit_heartbeat();
   }
 }
