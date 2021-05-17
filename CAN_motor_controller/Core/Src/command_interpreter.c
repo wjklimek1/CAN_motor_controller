@@ -197,30 +197,30 @@ void transmit_errors()
   msg.DLC = 5;
 
   msg.data[0] = GET_ERRORS;
-  if(get_mosfet_fault() == 1)
-	msg.data[1] = 1;
+  if (get_mosfet_fault() == 1)
+    msg.data[1] = 1;
   else
-	msg.data[1] = 0;
+    msg.data[1] = 0;
 
-  if(get_current() > _max_current)
-	msg.data[2] = 1;
+  if (get_current() > _max_current)
+    msg.data[2] = 1;
   else
-  	msg.data[2] = 0;
+    msg.data[2] = 0;
 
-  if(get_temperature_internal() > _max_temperature_ext)
-	msg.data[3] = 1;
+  if (get_temperature_internal() > _max_temperature_ext)
+    msg.data[3] = 1;
   else
-  	msg.data[3] = 0;
+    msg.data[3] = 0;
 
-  if(get_temperature_external() > _max_temperature_ext)
-	msg.data[4] = 1;
+  if (get_temperature_external() > _max_temperature_ext)
+    msg.data[4] = 1;
   else
-  	msg.data[4] = 0;
+    msg.data[4] = 0;
 
-  if(_emergency_stop == 1)
-	msg.data[4] = 1;
+  if (_emergency_stop == 1)
+    msg.data[4] = 1;
   else
-	msg.data[4] = 0;
+    msg.data[4] = 0;
 
   while(CAN1_transmit_message(msg) < 0);
 }
@@ -323,13 +323,13 @@ void set_heartbeat(CANbus_msg_t msg)
 
 void transmit_heartbeat()
 {
-  if(_heartbeat_interval == 0)  //if interval is 0, heartbeat is disabled
-	  return;
+  if (_heartbeat_interval == 0)  //if interval is 0, heartbeat is disabled
+    return;
 
   static uint32_t timer = 0;
-  if (getTick() - timer > _heartbeat_interval*1000)  //if time defined by _heartbeat_interval passed, transmit heartbeat;
+  if (getTick() - timer > _heartbeat_interval * 1000)  //if time defined by _heartbeat_interval passed, transmit heartbeat;
   {
-	timer = getTick();
+    timer = getTick();
     CANbus_msg_t msg;
     msg.DLC = 0;
     msg.stdID = COMMAND_MSG_ID;
