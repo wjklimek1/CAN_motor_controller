@@ -194,7 +194,7 @@ void transmit_errors()
   CANbus_msg_t msg;
   msg.stdID = DATARQ_MSG_ID;
   msg.RTR = 0;
-  msg.DLC = 5;
+  msg.DLC = 6;
 
   msg.data[0] = GET_ERRORS;
   if (get_mosfet_fault() == 1)
@@ -218,9 +218,9 @@ void transmit_errors()
     msg.data[4] = 0;
 
   if (_emergency_stop == 1)
-    msg.data[4] = 1;
+    msg.data[5] = 1;
   else
-    msg.data[4] = 0;
+    msg.data[5] = 0;
 
   while(CAN1_transmit_message(msg) < 0);
 }
