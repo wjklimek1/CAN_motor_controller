@@ -2,6 +2,20 @@
 #include <math.h>
 #include "thermistor.h"
 
+//====================== read tempeatature ========================//
+/**
+ *  @brief Converts thermistor resistance to temperature.
+ *
+ *  Using Steinhart equation, this function converts resistance of thermistor to temperature in Celcius.
+ *
+ *  @param[in] resistance current resistance of thermistor in Ohms
+ *  @param[in] nominal_resistance nominal resistance of thermistor in Ohms (get from datasheet)
+ *  @param[in] beta beta value of thermistor (get from datasheet)
+ *  @param[in] ref_temp temperatue, when thermistor has nominal resistance. Almost always = 25 degree C, but check in datasheet to be sure.
+ *
+ *  @return value of temperature in Celcius degree
+ */
+
 float thermistor_getTemperature_steinhart(uint32_t resistance, uint32_t nominal_resistance, uint32_t beta, uint32_t ref_temp)
 {
   float steinhart;
