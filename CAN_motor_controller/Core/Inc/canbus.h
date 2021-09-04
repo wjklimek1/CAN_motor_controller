@@ -13,6 +13,7 @@ typedef struct CANbus_msg_t
 } CANbus_msg_t;
 
 uint8_t CAN1_init(uint32_t baudrate);
+void CAN1_config_filter(uint32_t filter, uint32_t ID, uint32_t fifo);
 int8_t CAN1_transmit_message(CANbus_msg_t msg);
 uint8_t CAN1_get_message(CANbus_msg_t *msg);
 uint8_t CAN1_messages_pending_FIFO0();

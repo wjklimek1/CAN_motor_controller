@@ -28,9 +28,6 @@ extern volatile CANbus_RX_buffer_t rx_buffer;
  *
  *  Available baudrates are: 250kb/s, 500kb/s 1Mb/s
  *
- *  This function also configures CAN filters to pass only messages with ID equal to DATA_MSG_ID or DATA_RQ_ID.
- *  This constants are defined in canbus.h file. Messages with ID = DATA_MSG_ID are placed in FIFO0 and ones with ID = DATA_MSG_ID are placed in FIFO1.
- *
  *  @param[in] baudrate CAN1 baudrate in b/s (250000 for 250kb/s and so on)
  *
  *  @retval 0: baudrate not supported, CAN1 not initialized
@@ -83,21 +80,6 @@ uint8_t CAN1_init(uint32_t baudrate)
   CAN1->MCR &= ~(CAN_MCR_NART);                                  //enable automatic retransmission
   CAN1->MCR |= CAN_MCR_ABOM;                                     //enable automatic bus-off recovery
 
-  //Init CAN identifier filters
-  CAN1->FMR   |= CAN_FMR_FINIT;                           //enter init mode
-  CAN1->FS1R  |= (CAN_FS1R_FSC0 | CAN_FS1R_FSC1);         //set filters as 32bit values
-
-  CAN1->sFilterRegister[0].FR1 = COMMAND_MSG_ID << 21;    //config filter 0 to pass COMMAND_MSG_ID
-  CAN1->sFilterRegister[0].FR2 = 0x7FF << 21;             //config mask to match all bits
-  CAN1->sFilterRegister[1].FR1 = DATARQ_MSG_ID << 21;     //config filter 1 to pass DATARQ_MSG_ID
-  CAN1->sFilterRegister[1].FR2 = 0x7FF << 21;             //config mask to match all bits
-
-  CAN1->FFA1R &= ~CAN_FFA1R_FFA0;                         //place messages passing through filter 0 in FIFO0
-  CAN1->FFA1R |=  CAN_FFA1R_FFA1;                         //place messages passing through filter 1 in FIFO1
-  CAN1->FM1R  &= ~(CAN_FM1R_FBM0 | CAN_FM1R_FBM1);        //set filter bank 0 and 1 to identifier mask mode
-  CAN1->FA1R |= (CAN_FA1R_FACT0 | CAN_FA1R_FACT1);        //activate filters 0 and 1
-  CAN1->FMR &= ~CAN_FMR_FINIT;                            //exit init mode
-
   //enable CAN1_RX0 and CAN1_RX1 interrupts
   CAN1->IER |= (CAN_IER_FMPIE0 | CAN_IER_FMPIE1);   //enable interrupts for receiving
   NVIC_SetPriority(USB_LP_CAN1_RX0_IRQn, 6);        //set RX0 interrupt to 6 in NVIC
@@ -109,6 +91,34 @@ uint8_t CAN1_init(uint32_t baudrate)
   while((CAN1->MSR & CAN_MSR_INAK));  //wait for the hardware to confirm entering normal mode
 
   return 1;
+}
+
+//====================== filters config ========================//
+/**
+ *  @brief Configures filter to place incoming message in specified FIFO mailbox
+ *
+ *  Configures one filter bank in identifier list mode with 32-bit scale. That means this filter will pass
+ *  only messages of given ID and it will place them in specified FIFO mailbox.
+ *
+ *  @param[in] filter number of filter bank (0-13 in STM32F103C8T6)
+ *  @param[in] ID stdID of message that will pass the filter (0 - 0x7FF)
+ *  @param[in] fifo FIFO mailbox to place incoming message in. Can be equal 0 or 1 in STM32F103C8T6.
+ */
+
+void CAN1_config_filter(uint32_t filter, uint32_t ID, uint32_t fifo)
+{
+  //Init CAN identifier filters
+  CAN1->FMR |= CAN_FMR_FINIT;                        //enter init mode
+  CAN1->FS1R |= (1UL << filter);                     //set filter as 32bit value (scale)
+
+  CAN1->sFilterRegister[filter].FR1 = ID << 21;      //config filter 0 to pass COMMAND_MSG_ID
+  CAN1->sFilterRegister[filter].FR2 = 0x7FF << 21;   //config mask to match all bits
+
+  CAN1->FFA1R &= ~(1UL << filter);                   //clear register FIFO assignment bit
+  CAN1->FFA1R |= ((1UL & fifo) << filter);           //place messages passing through filter in specified FIFO
+  CAN1->FM1R &= ~(1UL << filter);                    //set filter to identifier mask mode
+  CAN1->FA1R |= (1UL << filter);                     //activate filter
+  CAN1->FMR &= ~CAN_FMR_FINIT;                       //exit init mode
 }
 
 //====================== transmit message ========================//
@@ -189,7 +199,8 @@ int8_t CAN1_transmit_message(CANbus_msg_t msg)
     return 0;
   }
 
-  else return -1;  //return error if all mailboxes are filled
+  else
+    return -1;  //return error if all mailboxes are filled
 }
 
 //====================== receive message ========================//
@@ -250,7 +261,8 @@ uint8_t CAN1_get_message(CANbus_msg_t *msg)
 
     return 2;
   }
-  else return 0;
+  else
+    return 0;
 }
 
 //====================== messages pending in FIFOs ========================//

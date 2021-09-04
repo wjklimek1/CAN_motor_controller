@@ -2126,7 +2126,7 @@ Wire Notes Line
 Wire Notes Line
 	7800 7050 16000 7050
 Wire Notes Line
-	8150 7900 16350 7900
+	7800 9400 16000 9400
 $Comp
 L Device:D D6
 U 1 1 60E2A7C4

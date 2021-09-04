@@ -23,7 +23,10 @@ int main()
   ADC_init();
   ADC_start_with_DMA((uint16_t*)ADC_raw_values);
   UART3_init(64000000, 115200);
+
   CAN1_init(250000);
+  CAN1_config_filter(0, COMMAND_MSG_ID, 0);
+  CAN1_config_filter(1, DATARQ_MSG_ID, 1);
 
   ringbuffer_init(&rx_buffer);
 

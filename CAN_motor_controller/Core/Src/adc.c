@@ -24,7 +24,7 @@ void ADC_init(void)
     {
     };  //wait until calibration is completed
 
-  ADC1->CR2 |= (ADC_CR2_CONT | ADC_CR2_DMA | ADC_CR2_EXTSEL);  //enable continous mode, enable DMA, set software as conversion trigger
+  ADC1->CR2 |= (ADC_CR2_CONT | ADC_CR2_DMA | ADC_CR2_EXTSEL);  //enable continuous mode, enable DMA, set software as conversion trigger
   ADC1->CR1 |= ADC_CR1_SCAN;                                   //enable scan mode
   ADC1->CR2 |= ADC_CR2_TSVREFE;                                //enable internal temperature sensor
   ADC1->CR2 |= ADC_CR2_EXTTRIG;                                //enable conversion on external trigger
@@ -51,7 +51,7 @@ void ADC_start_with_DMA(uint16_t *results_array)
 {
   // DMA initialization and start
   RCC->AHBENR |= RCC_AHBENR_DMA1EN;               //enable DMA1 clock
-  DMA1_Channel1->CCR &= ~(DMA_CCR_EN);            //disble DMA channel associated with ADC1
+  DMA1_Channel1->CCR &= ~(DMA_CCR_EN);            //disable DMA channel associated with ADC1
   DMA1_Channel1->CPAR = (uint32_t) &ADC1->DR;     //set peripherial address to read from ADC's data register
   DMA1_Channel1->CMAR = (uint32_t) results_array; //set memory address to write to
   DMA1_Channel1->CNDTR = 6;                       //set number of data transmissions
